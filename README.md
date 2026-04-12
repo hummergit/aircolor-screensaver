@@ -52,6 +52,11 @@ Download `aircolor.html` from this repository and save it anywhere on your Mac (
    file:///Users/YOUR_USERNAME/Documents/aircolor.html
    ```
 
+> **Alternative:** You can also use the GitHub Pages URL directly without downloading the file:
+> ```
+> https://hummergit.github.io/aircolor-screensaver/aircolor.html
+> ```
+
 ---
 
 ## How It Works
@@ -81,7 +86,10 @@ The background color is composed of four axes:
 
 ### Location Detection
 
-Uses the browser's `navigator.geolocation` API to find your approximate location. The coordinates are only used to fetch weather data from Open-Meteo — nothing is stored or sent elsewhere. If permission is denied, it defaults to Tokyo.
+Uses the browser's `navigator.geolocation` API to find your approximate location. The coordinates are only used to fetch weather data from Open-Meteo — nothing is stored or sent elsewhere.
+
+- If location permission is denied, it defaults to Tokyo's weather.
+- When using WebViewScreenSaver, a location permission dialog may appear on first launch. Allow it to enable automatic location detection.
 
 ---
 
