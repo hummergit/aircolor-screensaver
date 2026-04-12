@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Screensaver</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 400;
+  color: #FFFFFF;
+  background: #000;
+}
+
+/* ── フェードオーバーレイ: 黒→透明 ── */
+#fade-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity 1.8s ease;
+  z-index: 10;
+}
+#fade-overlay.done { opacity: 0; }
+
+/* ── レイアウト: viewport基準、各コーナーに固定 ── */
+/* 1920px固定キャンバスは使わず、vw/vh + clamp で対応 */
+
+#bg {
+  position: fixed;
+  inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 共通マージン: 画面短辺の3.5% */
+:root { --m: min(3.5vw, 3.5vh); }
+
+/* 左上: 日付 */
+#date-block {
+  position: fixed;
+  left: var(--m); top: var(--m);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(8px, 1.5vh, 20px);
+}
+#date-year  { font-size: clamp(14px, 1.8vw, 32px); line-height: 1; opacity: 0.9; }
+#date-month { font-size: clamp(18px, 2.5vw, 48px); line-height: 1; opacity: 0.95; }
+#date-day   { font-size: clamp(48px, 7vw, 120px);  line-height: 1; opacity: 0.95; letter-spacing: -0.02em; }
+
+/* 右上: 都市名 */
+#city-block {
+  position: fixed;
+  right: var(--m); top: var(--m);
+  font-size: clamp(14px, 1.8vw, 32px);
+  line-height: 1;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+/* 中央: 時計 */
+#clock-block {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(6px, 1vw, 20px);
+}
+#clock-hhmm {
+  font-size: clamp(80px, 13vw, 200px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+#clock-ss {
+  font-size: clamp(24px, 3.2vw, 52px);
+  line-height: 1;
+  padding-bottom: 0.1em;
+  opacity: 0.75;
+}
+
+/* 左下: 天気 */
+#wx-block {
+  position: fixed;
+  left: var(--m); bottom: var(--m);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: clamp(8px, 1vw, 17px);
+}
+#wx-icon-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(4px, 0.8vh, 12px);
+}
+#wx-icon .material-icons {
+  font-size: clamp(28px, 3.5vw, 60px);
+  display: block;
+  line-height: 1;
+}
+#wx-precip-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+#wx-precip-row .material-icons {
+  font-size: clamp(12px, 1.4vw, 24px);
+  display: block;
+  line-height: 1;
+}
+#wx-precip-num { font-size: clamp(10px, 1.3vw, 20px); line-height: 1; }
+#wx-precip-pct { font-size: clamp(7px,  0.7vw, 10px); line-height: 1; padding-bottom: 0.1em; }
+
+#wx-temp-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(6px, 1vh, 20px);
+}
+.temp-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 0;
+}
+.temp-num  {
+  width: 2.2em;
+  text-align: right;
+  display: block;
+  font-size: clamp(20px, 2.8vw, 48px);
+  line-height: 1;
+}
+.temp-unit {
+  font-size: clamp(9px, 1.1vw, 20px);
+  line-height: 1;
+  padding-bottom: 0.12em;
+  padding-left: 0.15em;
+}
+.temp-diff {
+  font-size: clamp(9px, 1.1vw, 20px);
+  line-height: 1;
+  padding-bottom: 0.12em;
+  padding-left: 0.3em;
+  min-width: 2em;
+}
+</style>
+</head>
+<body>
+
+<div id="fade-overlay"></div>
+<canvas id="bg"></canvas>
+
+<!-- 左上: 日付 -->
+<div id="date-block">
+  <div id="date-year">2026</div>
+  <div id="date-month">JANUARY</div>
+  <div id="date-day">29</div>
+</div>
+
+<!-- 右上: 都市名 -->
+<div id="city-block">TOKYO</div>
+
+<!-- 中央: 時計 -->
+<div id="clock-block">
+  <div id="clock-hhmm">--:--</div>
+  <div id="clock-ss">--</div>
+</div>
+
+<!-- 左下: 天気 -->
+<div id="wx-block">
+  <div id="wx-icon-col">
+    <div id="wx-icon"><span class="material-icons">wb_sunny</span></div>
+    <div id="wx-precip-row">
+      <span class="material-icons">water_drop</span>
+      <span id="wx-precip-num">--</span>
+      <span id="wx-precip-pct">%</span>
+    </div>
+  </div>
+  <div id="wx-temp-col">
+    <div class="temp-row">
+      <span id="wx-high"      class="temp-num">--</span>
+      <span id="wx-high-unit" class="temp-unit">℃</span>
+      <span id="wx-high-diff" class="temp-diff"></span>
+    </div>
+    <div class="temp-row">
+      <span id="wx-low"       class="temp-num">--</span>
+      <span id="wx-low-unit"  class="temp-unit">℃</span>
+      <span id="wx-low-diff"  class="temp-diff"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Particles ─────────────────────────────────────────────────────
+const canvas = document.getElementById('bg');
+const ctx    = canvas.getContext('2d');
+function resizeBg() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resizeBg();
+window.addEventListener('resize', resizeBg);
+
+function mkP() {
+  const a = Math.random() * Math.PI * 2;
+  return {
+    x: Math.random(), y: Math.random(),
+    vx: Math.cos(a) * (Math.random() * 0.06 + 0.02),
+    vy: Math.sin(a) * (Math.random() * 0.06 + 0.02),
+    r: Math.random() * 1.2 + 0.3,
+    aMax: Math.random() * 0.18 + 0.04,
+    phase: Math.random() * Math.PI * 2,
+    bT: Math.random() * 8 + 6,
+    dT: Math.random() * 20 + 15,
+    dA: Math.random() * Math.PI * 2,
+  };
+}
+const pts = Array.from({length:55}, mkP);
+pts.forEach((p,i) => p.phase = (i/55)*Math.PI*2);
+
+function animP(ts) {
+  const t = ts/1000;
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  pts.forEach(p => {
+    const da = (t/p.dT)*Math.PI*2 + p.dA;
+    p.vx += (Math.cos(da)*(p.r*0.1+0.02) - p.vx)*0.008;
+    p.vy += (Math.sin(da)*(p.r*0.1+0.02) - p.vy)*0.008;
+    p.x += p.vx/w; p.y += p.vy/h;
+    if(p.x<0)p.x=1; if(p.x>1)p.x=0; if(p.y<0)p.y=1; if(p.y>1)p.y=0;
+    ctx.globalAlpha = p.aMax*(0.5+0.5*Math.sin(t/p.bT*Math.PI*2+p.phase));
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(p.x*w, p.y*h, p.r, 0, Math.PI*2); ctx.fill();
+  });
+  requestAnimationFrame(animP);
+}
+requestAnimationFrame(animP);
+
+// ── Clock & date ──────────────────────────────────────────────────
+const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
+                'JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock-hhmm').textContent =
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  document.getElementById('clock-ss').textContent = String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('date-year').textContent  = n.getFullYear();
+  document.getElementById('date-month').textContent = MONTHS[n.getMonth()];
+  document.getElementById('date-day').textContent   = n.getDate();
+}
+updateClock(); setInterval(updateClock, 1000);
+
+// ── 都市リスト（現在地マッチング用） ─────────────────────────────
+const CITIES = [
+  { name:'SAPPORO',   lat: 43.06, lon: 141.35 },
+  { name:'SENDAI',    lat: 38.27, lon: 140.87 },
+  { name:'TOKYO',     lat: 35.68, lon: 139.65 },
+  { name:'NAGOYA',    lat: 35.18, lon: 136.91 },
+  { name:'OSAKA',     lat: 34.69, lon: 135.50 },
+  { name:'HIROSHIMA', lat: 34.39, lon: 132.45 },
+  { name:'FUKUOKA',   lat: 33.59, lon: 130.40 },
+  { name:'OKINAWA',   lat: 26.21, lon: 127.68 },
+  { name:'SEOUL',     lat: 37.57, lon: 126.98 },
+  { name:'BEIJING',   lat: 39.91, lon: 116.39 },
+  { name:'SHANGHAI',  lat: 31.23, lon: 121.47 },
+  { name:'HONG KONG', lat: 22.32, lon: 114.17 },
+  { name:'TAIPEI',    lat: 25.05, lon: 121.53 },
+  { name:'SINGAPORE', lat:  1.35, lon: 103.82 },
+  { name:'SYDNEY',    lat:-33.87, lon: 151.21 },
+  { name:'DUBAI',     lat: 25.20, lon:  55.27 },
+  { name:'LONDON',    lat: 51.51, lon:  -0.13 },
+  { name:'PARIS',     lat: 48.86, lon:   2.35 },
+  { name:'NEW YORK',  lat: 40.71, lon: -74.01 },
+  { name:'LOS ANGELES',lat:34.05, lon:-118.24 },
+];
+
+function nearestCity(lat, lon) {
+  let best = CITIES[0], bestD = Infinity;
+  CITIES.forEach(c => {
+    const d = Math.hypot(c.lat - lat, c.lon - lon);
+    if (d < bestD) { bestD = d; best = c; }
+  });
+  return best;
+}
+
+// ── 天気 ─────────────────────────────────────────────────────────
+function wmoIcon(code) {
+  if (code <= 1)  return 'wb_sunny';
+  if (code === 2) return 'partly_cloudy_day';
+  if (code === 3) return 'cloud';
+  if (code <= 48) return 'foggy';
+  if (code <= 67) return 'water_drop';
+  if (code <= 77) return 'ac_unit';
+  if (code <= 82) return 'rainy';
+  return 'thunderstorm';
+}
+function fmtDiff(d) { return (d >= 0 ? '+' : '') + d; }
+
+let wxCode = null, wxTemp = null, wxTempDiff = 0;
+let fetchLat = 35.68, fetchLon = 139.65; // デフォルト東京
+
+async function fetchWeather() {
+  try {
+    const res = await fetch(
+      `https://api.open-meteo.com/v1/forecast` +
+      `?latitude=${fetchLat}&longitude=${fetchLon}` +
+      `&current=temperature_2m,weathercode` +
+      `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
+      `&timezone=auto&forecast_days=1&past_days=1`
+    );
+    const d = await res.json();
+    const tH = Math.round(d.daily.temperature_2m_max[1]);
+    const tL = Math.round(d.daily.temperature_2m_min[1]);
+    const yH = Math.round(d.daily.temperature_2m_max[0]);
+    const yL = Math.round(d.daily.temperature_2m_min[0]);
+    wxCode     = d.current.weathercode;
+    wxTemp     = Math.round(d.current.temperature_2m);
+    wxTempDiff = ((tH+tL)/2) - ((yH+yL)/2);
+
+    document.getElementById('wx-icon').innerHTML =
+      `<span class="material-icons">${wmoIcon(wxCode)}</span>`;
+    document.getElementById('wx-high').textContent      = tH;
+    document.getElementById('wx-high-diff').textContent = fmtDiff(tH - yH);
+    document.getElementById('wx-low').textContent       = tL;
+    document.getElementById('wx-low-diff').textContent  = fmtDiff(tL - yL);
+    document.getElementById('wx-precip-num').textContent = d.daily.precipitation_probability_max[1];
+
+    bgReady = true; // 天気確定 → 背景色スナップ後にフェードイン
+  } catch(e) {}
+}
+
+// ── 現在地取得 ────────────────────────────────────────────────────
+function initLocation() {
+  if (!navigator.geolocation) { fetchWeather(); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      fetchLat = pos.coords.latitude;
+      fetchLon = pos.coords.longitude;
+      const city = nearestCity(fetchLat, fetchLon);
+      document.getElementById('city-block').textContent = city.name;
+      fetchWeather();
+    },
+    _err => { fetchWeather(); }, // 失敗時はデフォルト東京
+    { timeout: 5000, maximumAge: 60000 }
+  );
+}
+initLocation();
+setInterval(fetchWeather, 10 * 60 * 1000);
+
+// ── 背景色システム ────────────────────────────────────────────────
+function hexToHsl(hex) {
+  const r=parseInt(hex.slice(0,2),16)/255, g=parseInt(hex.slice(2,4),16)/255, b=parseInt(hex.slice(4,6),16)/255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h,s,l=(max+min)/2;
+  if(max===min){h=s=0;}
+  else{
+    const d=max-min; s=l>0.5?d/(2-max-min):d/(max+min);
+    switch(max){
+      case r:h=((g-b)/d+(g<b?6:0))/6;break;
+      case g:h=((b-r)/d+2)/6;break;
+      case b:h=((r-g)/d+4)/6;break;
+    }
+  }
+  return {h:h*360, s:s*100, l:l*100};
+}
+
+const WX_COLORS = {
+  sunny:   hexToHsl('FAD078'),
+  pcloudy: hexToHsl('DDE4D8'),
+  cloudy:  hexToHsl('CCD8CE'),
+  fog:     hexToHsl('C8D0CC'),
+  rain:    hexToHsl('A2D2EC'),
+  snow:    hexToHsl('EBF2F7'),
+  shower:  hexToHsl('B8C8DC'),
+  storm:   hexToHsl('D4CCD8'),
+};
+function wxToBase(code) {
+  if (code == null) return WX_COLORS.sunny;
+  if (code <= 1)    return WX_COLORS.sunny;
+  if (code === 2)   return WX_COLORS.pcloudy;
+  if (code === 3)   return WX_COLORS.cloudy;
+  if (code <= 48)   return WX_COLORS.fog;
+  if (code <= 67)   return WX_COLORS.rain;
+  if (code <= 77)   return WX_COLORS.snow;
+  if (code <= 82)   return WX_COLORS.shower;
+  return                   WX_COLORS.storm;
+}
+
+const L_KEYS = [
+  [0,0.72],[5,0.74],[6,0.82],[8,0.90],
+  [12,1.00],[15,0.97],[17,0.88],[19,0.80],[22,0.75],[24,0.72],
+];
+function timeLRatio(hf) {
+  let i=0;
+  while(i<L_KEYS.length-2 && L_KEYS[i+1][0]<=hf) i++;
+  const [h0,l0]=L_KEYS[i],[h1,l1]=L_KEYS[i+1];
+  return l0+(l1-l0)*((hf-h0)/(h1-h0));
+}
+function tempWB(t)  { if(t==null)return 0; return Math.max(-12,Math.min(12,(t-15)*-1.0)); }
+function tempGrad(d){ const s=Math.max(-25,Math.min(25,d*3.5)); return {left:s,right:-s}; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function hslStr(h,s,l){ return `hsl(${h.toFixed(1)},${clamp(s,5,70).toFixed(1)}%,${clamp(l,8,95).toFixed(1)}%)`; }
+
+// 初期状態: 黒（bgReadyがtrueになるまで黒のまま）
+let cur = { hBase: 0, s: 0, l: 0, wb: 0, gradL: 0, gradR: 0 };
+let bgReady = false;
+let fadeStarted = false;
+
+function bgTick() {
+  const now  = new Date();
+  const hf   = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
+  const base = wxToBase(wxCode);
+  const wb   = tempWB(wxTemp);
+  const grad = tempGrad(wxTempDiff);
+  const lgt  = Math.max(8, base.l * timeLRatio(hf));
+
+  if (bgReady) {
+    // 天気取得後: ターゲットに即スナップしてからフェードイン開始
+    cur.hBase = base.h; cur.s = base.s; cur.l = lgt;
+    cur.wb = wb; cur.gradL = grad.left; cur.gradR = grad.right;
+    bgReady = false;
+    if (!fadeStarted) {
+      fadeStarted = true;
+      setTimeout(() => {
+        document.getElementById('fade-overlay').classList.add('done');
+      }, 50);
+    }
+  } else if (fadeStarted) {
+    // フェードイン後: 通常のゆっくりlerp
+    const k = 0.004;
+    cur.hBase += (base.h - cur.hBase)*k;
+    cur.s     += (base.s - cur.s)*k;
+    cur.l     += (lgt    - cur.l)*k;
+    cur.wb    += (wb     - cur.wb)*k;
+    cur.gradL += (grad.left  - cur.gradL)*k;
+    cur.gradR += (grad.right - cur.gradR)*k;
+  }
+  // bgReady前(黒)はcurを動かさない → body背景は黒のまま
+
+  const hL = cur.hBase + cur.wb + cur.gradL;
+  const hR = cur.hBase + cur.wb + cur.gradR;
+  const gd = Math.abs(cur.gradL - cur.gradR);
+  document.body.style.background = gd < 0.5
+    ? hslStr(hL, cur.s, cur.l)
+    : `linear-gradient(to right,${hslStr(hL,cur.s,cur.l)},${hslStr(hR,cur.s,cur.l)})`;
+
+  requestAnimationFrame(bgTick);
+}
+requestAnimationFrame(bgTick);
+</script>
+</body>
+</html>
