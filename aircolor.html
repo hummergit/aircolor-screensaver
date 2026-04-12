@@ -2,7 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Screensaver</title>
+<title>AirColor Screensaver</title>
+<link id="favicon" rel="icon" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -458,6 +459,30 @@ function tempGrad(d){ const s=Math.max(-25,Math.min(25,d*3.5)); return {left:s,r
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 function hslStr(h,s,l){ return `hsl(${h.toFixed(1)},${clamp(s,5,70).toFixed(1)}%,${clamp(l,8,95).toFixed(1)}%)`; }
 
+// ── 動的Favicon ───────────────────────────────────────────────────
+const favCanvas = document.createElement('canvas');
+favCanvas.width = favCanvas.height = 64;
+const favCtx = favCanvas.getContext('2d');
+let favLastUpdate = 0;
+
+function updateFavicon(hL, hR, s, l, gd) {
+  const now = Date.now();
+  if (now - favLastUpdate < 1000) return; // 1秒に1回だけ更新
+  favLastUpdate = now;
+  const sz = favCanvas.width;
+  if (gd < 0.5) {
+    favCtx.fillStyle = hslStr(hL, s, l);
+    favCtx.fillRect(0, 0, sz, sz);
+  } else {
+    const gr = favCtx.createLinearGradient(0, 0, sz, 0);
+    gr.addColorStop(0, hslStr(hL, s, l));
+    gr.addColorStop(1, hslStr(hR, s, l));
+    favCtx.fillStyle = gr;
+    favCtx.fillRect(0, 0, sz, sz);
+  }
+  document.getElementById('favicon').href = favCanvas.toDataURL('image/png');
+}
+
 // 初期状態: 黒（bgReadyがtrueになるまで黒のまま）
 let cur = { hBase: 0, s: 0, l: 0, wb: 0, gradL: 0, gradR: 0 };
 let bgReady = false;
@@ -500,6 +525,7 @@ function bgTick() {
   document.body.style.background = gd < 0.5
     ? hslStr(hL, cur.s, cur.l)
     : `linear-gradient(to right,${hslStr(hL,cur.s,cur.l)},${hslStr(hR,cur.s,cur.l)})`;
+  updateFavicon(hL, hR, cur.s, cur.l, gd);
 
   requestAnimationFrame(bgTick);
 }
