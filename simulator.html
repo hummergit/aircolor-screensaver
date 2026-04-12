@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>AirColor Simulator</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg:      #161616;
+  --sur:     #1f1f1f;
+  --sur2:    #181818;
+  --bdr:     #2c2c2c;
+  --txt:     #d4d4d4;
+  --dim:     #666;
+  --acc:     #5b9cf6;
+  --green:   #4caf50;
+}
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+#hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 16px;
+  background: var(--sur); border-bottom: 1px solid var(--bdr);
+  flex-shrink: 0; z-index: 10;
+}
+#hdr h1 { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; }
+.hdr-btns { display: flex; gap: 7px; }
+.btn {
+  border: none; border-radius: 5px; padding: 6px 13px;
+  font-size: 12px; cursor: pointer; font-weight: 500; transition: filter 0.12s;
+}
+.btn-sec  { background: var(--sur2); color: var(--dim); border: 1px solid var(--bdr); }
+.btn-sec:hover { color: var(--txt); }
+.btn-pri  { background: var(--acc); color: #fff; }
+.btn-pri:hover { filter: brightness(1.12); }
+.btn-pri.ok { background: var(--green); }
+
+/* ── Preview ─────────────────────────────────────────────────────── */
+#preview { height: 150px; flex-shrink: 0; transition: background 0.25s; }
+
+/* ── Timeline ────────────────────────────────────────────────────── */
+#tl-wrap {
+  flex-shrink: 0; padding: 8px 16px 10px;
+  background: var(--sur); border-bottom: 1px solid var(--bdr);
+}
+.tl-hlabels {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--dim); margin-bottom: 4px; padding: 0 1px;
+}
+#tl-outer { position: relative; height: 26px; }
+#tl-cv    { width: 100%; height: 100%; display: block; border-radius: 3px; cursor: crosshair; }
+#tl-needle {
+  position: absolute; top: -4px; bottom: -4px; width: 2px;
+  background: rgba(255,255,255,0.9); pointer-events: none;
+  border-radius: 1px; box-shadow: 0 0 6px rgba(0,0,0,0.7);
+  transform: translateX(-50%);
+}
+
+/* ── Main two-pane ───────────────────────────────────────────────── */
+#main {
+  display: grid; grid-template-columns: 255px 1fr;
+  flex: 1; overflow: hidden;
+}
+
+#left {
+  border-right: 1px solid var(--bdr);
+  padding: 13px; display: flex; flex-direction: column; gap: 15px;
+  overflow-y: auto;
+}
+#right {
+  padding: 13px; display: flex; flex-direction: column; gap: 15px;
+  overflow-y: auto;
+}
+
+/* ── Sections ────────────────────────────────────────────────────── */
+.sec { display: flex; flex-direction: column; gap: 8px; }
+.sec-ttl {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--dim);
+  padding-bottom: 5px; border-bottom: 1px solid var(--bdr);
+}
+
+/* ── Control rows ────────────────────────────────────────────────── */
+.cr { display: flex; align-items: center; gap: 8px; }
+.cr-lbl { font-size: 11px; color: var(--dim); width: 74px; flex-shrink: 0; }
+.cr-val { font-size: 11px; font-family: monospace; color: var(--acc); min-width: 44px; text-align: right; flex-shrink: 0; }
+input[type=range] { flex: 1; accent-color: var(--acc); cursor: pointer; }
+
+/* ── Weather buttons ─────────────────────────────────────────────── */
+#wx-btns { display: flex; flex-wrap: wrap; gap: 5px; }
+.wxb {
+  background: var(--sur2); border: 1px solid var(--bdr);
+  color: var(--dim); border-radius: 4px; padding: 4px 9px;
+  font-size: 11px; cursor: pointer; transition: all 0.1s; line-height: 1;
+}
+.wxb:hover { color: var(--txt); border-color: #444; }
+.wxb.on   { border-color: var(--acc); background: rgba(91,156,246,0.12); color: var(--acc); }
+
+/* ── Info box ────────────────────────────────────────────────────── */
+#info {
+  background: var(--sur2); border: 1px solid var(--bdr); border-radius: 5px;
+  padding: 9px 10px; font-family: monospace; font-size: 10.5px;
+  line-height: 1.85; color: var(--dim); flex-shrink: 0;
+}
+#info b { color: var(--txt); font-weight: normal; }
+#info .hl { color: var(--acc); }
+
+/* ── Curve panel ─────────────────────────────────────────────────── */
+.cv-panel {
+  background: var(--sur2); border: 1px solid var(--bdr); border-radius: 6px;
+  padding: 10px; display: flex; flex-direction: column; gap: 9px;
+}
+.cv-canvas { width: 100%; height: 105px; display: block; border-radius: 3px; }
+
+/* keyframe inputs */
+.kf-row { display: flex; gap: 7px; flex-wrap: wrap; }
+.kf     { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.kf-h   { font-size: 10px; color: var(--acc); font-family: monospace; }
+.kf input[type=number] {
+  width: 48px; background: var(--bg); border: 1px solid var(--bdr);
+  color: var(--txt); border-radius: 3px; padding: 3px 4px;
+  font-size: 11px; text-align: center; font-family: monospace;
+}
+.kf input[type=number]:focus { outline: none; border-color: var(--acc); }
+
+/* ── WX Colors grid ──────────────────────────────────────────────── */
+#wx-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px;
+}
+.wxi {
+  background: var(--sur2); border: 1px solid var(--bdr);
+  border-radius: 6px; padding: 9px;
+  display: flex; flex-direction: column; gap: 7px;
+  transition: border-color 0.15s;
+}
+.wxi.cur { border-color: var(--acc); }
+.wxi-head { display: flex; align-items: center; gap: 7px; }
+.wxi-sw   { width: 20px; height: 20px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.08); }
+.wxi-name { font-size: 11px; font-weight: 600; }
+.wxi-row  { display: flex; align-items: center; gap: 5px; }
+.wxi-row label { font-size: 10px; color: var(--dim); width: 12px; flex-shrink: 0; }
+.wxi-row input[type=range] { flex: 1; }
+.wxi-row input[type=number] {
+  width: 44px; background: var(--bg); border: 1px solid var(--bdr);
+  color: var(--txt); border-radius: 3px; padding: 2px 3px;
+  font-size: 10px; text-align: center; font-family: monospace;
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="hdr">
+  <h1>AirColor Simulator</h1>
+  <div class="hdr-btns">
+    <button class="btn btn-sec" id="btn-reset">リセット</button>
+    <button class="btn btn-pri" id="btn-copy">値をコピーしてClaudeに送る</button>
+  </div>
+</div>
+
+<!-- Preview -->
+<div id="preview"></div>
+
+<!-- Timeline -->
+<div id="tl-wrap">
+  <div class="tl-hlabels">
+    <span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
+  </div>
+  <div id="tl-outer">
+    <canvas id="tl-cv" height="26"></canvas>
+    <div id="tl-needle"></div>
+  </div>
+</div>
+
+<!-- Main -->
+<div id="main">
+
+  <!-- Left -->
+  <div id="left">
+
+    <div class="sec">
+      <div class="sec-ttl">天気</div>
+      <div id="wx-btns">
+        <button class="wxb on" data-wx="sunny">快晴</button>
+        <button class="wxb" data-wx="pcloudy">薄曇り</button>
+        <button class="wxb" data-wx="cloudy">曇り</button>
+        <button class="wxb" data-wx="fog">霧</button>
+        <button class="wxb" data-wx="rain">雨</button>
+        <button class="wxb" data-wx="snow">雪</button>
+        <button class="wxb" data-wx="shower">にわか雨</button>
+        <button class="wxb" data-wx="storm">嵐</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-ttl">時刻</div>
+      <div class="cr">
+        <label class="cr-lbl">時刻</label>
+        <input type="range" id="sl-time" min="0" max="24" step="0.05" value="12">
+        <span class="cr-val" id="v-time">12:00</span>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:-2px;">
+        <button class="btn btn-sec" id="btn-now" style="font-size:11px;padding:3px 10px;">現在時刻</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-ttl">気温</div>
+      <div class="cr">
+        <label class="cr-lbl">現在気温</label>
+        <input type="range" id="sl-temp" min="-10" max="45" step="0.5" value="20">
+        <span class="cr-val" id="v-temp">20℃</span>
+      </div>
+      <div class="cr">
+        <label class="cr-lbl">昨日比平均</label>
+        <input type="range" id="sl-tdiff" min="-15" max="15" step="0.5" value="0">
+        <span class="cr-val" id="v-tdiff">±0℃</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-ttl">気温影響</div>
+      <div class="cr">
+        <label class="cr-lbl">WB係数</label>
+        <input type="range" id="sl-wb" min="-3" max="0" step="0.05" value="-0.5">
+        <span class="cr-val" id="v-wb">-0.50</span>
+      </div>
+      <div class="cr">
+        <label class="cr-lbl">Grad係数</label>
+        <input type="range" id="sl-grad" min="0" max="10" step="0.1" value="3.5">
+        <span class="cr-val" id="v-grad">3.50</span>
+      </div>
+    </div>
+
+    <div class="sec" style="flex:1;">
+      <div class="sec-ttl">現在値</div>
+      <div id="info">—</div>
+    </div>
+
+  </div>
+
+  <!-- Right -->
+  <div id="right">
+
+    <div class="sec">
+      <div class="sec-ttl">L_KEYS — 明度カーブ (ratio)</div>
+      <div class="cv-panel">
+        <canvas class="cv-canvas" id="cv-l" height="105"></canvas>
+        <div class="kf-row" id="tbl-l"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-ttl">S_KEYS — 彩度カーブ (ratio)</div>
+      <div class="cv-panel">
+        <canvas class="cv-canvas" id="cv-s" height="105"></canvas>
+        <div class="kf-row" id="tbl-s"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-ttl">WX_COLORS — 天気ごとの基準色</div>
+      <div id="wx-grid"></div>
+    </div>
+
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ── Defaults (mirrors aircolor.html) ──────────────────────────────
+const DFLT = {
+  wxColors: {
+    sunny:   {h: 38, s: 87, l: 72},
+    pcloudy: {h:120, s: 15, l: 80},
+    cloudy:  {h:140, s: 12, l: 78},
+    fog:     {h:150, s:  8, l: 80},
+    rain:    {h:200, s: 60, l: 78},
+    snow:    {h:210, s: 35, l: 88},
+    shower:  {h:213, s: 34, l: 79},
+    storm:   {h:270, s: 20, l: 78},
+  },
+  lKeys: [[0,.65],[3,.73],[6,.81],[8,.88],[10,.95],[12,1.00],[15,.91],[17,.86],[19,.80],[21,.74],[24,.65]],
+  sKeys: [[0,.55],[3,.67],[6,.78],[8,.87],[10,.96],[12,1.05],[15,.94],[17,.85],[19,.75],[21,.64],[24,.55]],
+  wbCoef:  -0.5,
+  gradCoef: 3.5,
+};
+const WX_KEYS   = ['sunny','pcloudy','cloudy','fog','rain','snow','shower','storm'];
+const WX_LABELS = {sunny:'快晴',pcloudy:'薄曇り',cloudy:'曇り',fog:'霧',rain:'雨',snow:'雪',shower:'にわか雨',storm:'嵐'};
+const WX_CODES  = {sunny:'0',pcloudy:'2',cloudy:'3',fog:'45',rain:'61',snow:'71',shower:'81',storm:'95'};
+
+// ── State ─────────────────────────────────────────────────────────
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+const st = {
+  wxColors: clone(DFLT.wxColors),
+  lKeys:    clone(DFLT.lKeys),
+  sKeys:    clone(DFLT.sKeys),
+  wbCoef:   DFLT.wbCoef,
+  gradCoef: DFLT.gradCoef,
+  wx:    'sunny',
+  time:  12,
+  temp:  20,
+  tdiff: 0,
+};
+
+// ── Core math (exact mirror of aircolor.html) ──────────────────────
+function interp(keys, hf) {
+  let i = 0;
+  while (i < keys.length - 2 && keys[i+1][0] <= hf) i++;
+  const [h0,v0] = keys[i], [h1,v1] = keys[i+1];
+  return v0 + (v1-v0) * ((hf-h0)/(h1-h0));
+}
+function clamp(v,a,b) { return Math.max(a, Math.min(b, v)); }
+function hsl(h,s,l)   { return `hsl(${h.toFixed(1)},${clamp(s,5,70).toFixed(1)}%,${clamp(l,8,95).toFixed(1)}%)`; }
+
+function compute(hf) {
+  const base = st.wxColors[st.wx];
+  const lr   = interp(st.lKeys, hf);
+  const sr   = interp(st.sKeys, hf);
+  const lRaw = base.l * lr;
+  const sRaw = base.s * sr;
+  const l    = Math.max(8, lRaw);
+  const s    = Math.max(5, sRaw);
+  const wb   = Math.max(-12, Math.min(12, (st.temp - 15) * st.wbCoef));
+  const gs   = Math.max(-25, Math.min(25, st.tdiff * st.gradCoef));
+  const hL   = base.h + wb + gs;
+  const hR   = base.h + wb - gs;
+  return { hL, hR, s, l, gd: Math.abs(gs)*2, wb, lr, sr, lRaw, sRaw };
+}
+
+// ── Preview ───────────────────────────────────────────────────────
+function renderPreview() {
+  const {hL, hR, s, l, gd} = compute(st.time);
+  document.getElementById('preview').style.background = gd < 0.5
+    ? hsl(hL, s, l)
+    : `linear-gradient(to right,${hsl(hL,s,l)},${hsl(hR,s,l)})`;
+}
+
+// ── Info ──────────────────────────────────────────────────────────
+function renderInfo() {
+  const {hL, hR, s, l, gd, wb, lr, sr, lRaw, sRaw} = compute(st.time);
+  const base = st.wxColors[st.wx];
+  const lCl  = clamp(lRaw, 8, 95), sCl = clamp(sRaw, 5, 70);
+  const lWarn = lCl !== lRaw ? ` <span style="color:#f88">→clamped ${lCl.toFixed(1)}</span>` : '';
+  const sWarn = sCl !== sRaw ? ` <span style="color:#f88">→clamped ${sCl.toFixed(1)}</span>` : '';
+  document.getElementById('info').innerHTML =
+    `base h=<b>${base.h}</b> s=<b>${base.s}</b> l=<b>${base.l}</b><br>` +
+    `L_ratio=<span class=hl>${lr.toFixed(3)}</span> → lRaw=<b>${lRaw.toFixed(1)}</b>${lWarn}<br>` +
+    `S_ratio=<span class=hl>${sr.toFixed(3)}</span> → sRaw=<b>${sRaw.toFixed(1)}</b>${sWarn}<br>` +
+    `WB shift=<b>${wb.toFixed(2)}</b>  grad=<b>±${Math.abs(st.tdiff * st.gradCoef).toFixed(1)}</b><br>` +
+    `hL=<span class=hl>${hL.toFixed(1)}</span>  hR=<span class=hl>${hR.toFixed(1)}</span>  s=<span class=hl>${s.toFixed(1)}</span>  l=<span class=hl>${l.toFixed(1)}</span>`;
+}
+
+// ── Timeline ──────────────────────────────────────────────────────
+function renderTimeline() {
+  const cv = document.getElementById('tl-cv');
+  cv.width = cv.offsetWidth;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  for (let px = 0; px < W; px++) {
+    const hf = (px / W) * 24;
+    const {hL, hR, s, l} = compute(hf);
+    ctx.fillStyle = hsl((hL+hR)/2, s, l);
+    ctx.fillRect(px, 0, 1, H);
+  }
+  ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 1;
+  for (let hh = 6; hh < 24; hh += 6) {
+    const x = Math.round((hh/24)*W) + 0.5;
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+  }
+  document.getElementById('tl-needle').style.left = `${(st.time/24)*100}%`;
+}
+
+// ── Curve canvas ──────────────────────────────────────────────────
+function renderCurve(cvId, keys, yMin, yMax) {
+  const cv = document.getElementById(cvId);
+  cv.width = cv.offsetWidth;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const pd = {t:7, b:17, l:30, r:8};
+  const iw = W-pd.l-pd.r, ih = H-pd.t-pd.b;
+  const fx = hf => pd.l + (hf/24)*iw;
+  const fy = v  => pd.t + ih - ((v-yMin)/(yMax-yMin))*ih;
+
+  // bg
+  ctx.fillStyle = '#111'; ctx.fillRect(0,0,W,H);
+
+  // grid lines
+  const vstep = 0.1;
+  ctx.strokeStyle = '#1e1e1e'; ctx.lineWidth = 1;
+  for (let v = Math.round(yMin*10)/10; v <= yMax+.001; v = Math.round((v+vstep)*100)/100) {
+    const y = Math.round(fy(v))+.5;
+    ctx.beginPath(); ctx.moveTo(pd.l, y); ctx.lineTo(W-pd.r, y); ctx.stroke();
+  }
+  for (let hh = 0; hh <= 24; hh += 6) {
+    const x = Math.round(fx(hh))+.5;
+    ctx.beginPath(); ctx.moveTo(x, pd.t); ctx.lineTo(x, pd.t+ih); ctx.stroke();
+  }
+
+  // 1.0 dashed reference
+  if (yMin < 1.0 && yMax > 1.0) {
+    const y1 = Math.round(fy(1.0))+.5;
+    ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(pd.l,y1); ctx.lineTo(W-pd.r,y1); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // axis labels
+  ctx.fillStyle='#484848'; ctx.font='9px monospace'; ctx.textAlign='right';
+  for (let v = Math.round(yMin*10)/10; v <= yMax+.001; v = Math.round((v+vstep)*100)/100) {
+    ctx.fillText(v.toFixed(1), pd.l-3, fy(v)+3);
+  }
+  ctx.textAlign='center';
+  for (let hh = 0; hh <= 24; hh += 6) {
+    ctx.fillText(hh, fx(hh), H-2);
+  }
+
+  // curve
+  ctx.strokeStyle='#5b9cf6'; ctx.lineWidth=2;
+  ctx.beginPath();
+  for (let px = 0; px <= iw; px++) {
+    const v = interp(keys, (px/iw)*24);
+    px===0 ? ctx.moveTo(pd.l+px, fy(v)) : ctx.lineTo(pd.l+px, fy(v));
+  }
+  ctx.stroke();
+
+  // keyframe dots
+  keys.forEach(([kh,kv]) => {
+    const x=fx(kh), y=fy(kv);
+    ctx.fillStyle='#5b9cf6'; ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#181818'; ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.fill();
+  });
+
+  // current time needle + dot
+  const cx = fx(st.time), cv2 = interp(keys, st.time);
+  ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(cx, pd.t); ctx.lineTo(cx, pd.t+ih); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx, fy(cv2), 4, 0, Math.PI*2); ctx.fill();
+}
+
+// ── Keyframe table ────────────────────────────────────────────────
+function buildKfTable(tblId, keys, onUpdate) {
+  const tbl = document.getElementById(tblId);
+  tbl.innerHTML = '';
+  keys.forEach((kp, i) => {
+    const div = document.createElement('div');
+    div.className = 'kf';
+    const h = document.createElement('div');
+    h.className = 'kf-h';
+    h.textContent = `${kp[0]}h`;
+    const inp = document.createElement('input');
+    inp.type='number'; inp.min='.10'; inp.max='1.50'; inp.step='.01';
+    inp.value = kp[1].toFixed(2);
+    inp.addEventListener('change', () => {
+      const v = parseFloat(inp.value);
+      if (!isNaN(v)) { keys[i][1] = +v.toFixed(2); onUpdate(); }
+    });
+    div.appendChild(h); div.appendChild(inp);
+    tbl.appendChild(div);
+  });
+}
+
+// ── WX Colors grid ────────────────────────────────────────────────
+function buildWxGrid() {
+  const grid = document.getElementById('wx-grid');
+  grid.innerHTML = '';
+  WX_KEYS.forEach(key => {
+    const col = st.wxColors[key];
+    const card = document.createElement('div');
+    card.className = 'wxi' + (key === st.wx ? ' cur' : '');
+    card.id = `wxi-${key}`;
+
+    const head = document.createElement('div');
+    head.className = 'wxi-head';
+    const sw = document.createElement('div');
+    sw.className = 'wxi-sw'; sw.id = `sw-${key}`;
+    sw.style.background = `hsl(${col.h},${col.s}%,${col.l}%)`;
+    const nm = document.createElement('div');
+    nm.className = 'wxi-name'; nm.textContent = WX_LABELS[key];
+    head.appendChild(sw); head.appendChild(nm);
+    card.appendChild(head);
+
+    [
+      {lb:'H', pr:'h', mn:0,   mx:360, sp:1},
+      {lb:'S', pr:'s', mn:0,   mx:100, sp:1},
+      {lb:'L', pr:'l', mn:10,  mx:95,  sp:1},
+    ].forEach(({lb, pr, mn, mx, sp}) => {
+      const row = document.createElement('div');
+      row.className = 'wxi-row';
+      const lbl = document.createElement('label'); lbl.textContent = lb;
+      const sl  = document.createElement('input'); sl.type='range'; sl.min=mn; sl.max=mx; sl.step=sp; sl.value=col[pr];
+      const nu  = document.createElement('input'); nu.type='number'; nu.min=mn; nu.max=mx; nu.step=sp; nu.value=col[pr];
+      const sync = v => {
+        col[pr] = v; sl.value = v; nu.value = v;
+        document.getElementById(`sw-${key}`).style.background = `hsl(${col.h},${col.s}%,${col.l}%)`;
+        renderAll();
+      };
+      sl.addEventListener('input',  () => sync(+sl.value));
+      nu.addEventListener('change', () => sync(+nu.value));
+      row.appendChild(lbl); row.appendChild(sl); row.appendChild(nu);
+      card.appendChild(row);
+    });
+    grid.appendChild(card);
+  });
+}
+
+function refreshWxActive() {
+  WX_KEYS.forEach(k => {
+    const el = document.getElementById(`wxi-${k}`);
+    if (el) el.className = 'wxi' + (k === st.wx ? ' cur' : '');
+  });
+}
+
+// ── Render all ────────────────────────────────────────────────────
+function renderAll() {
+  renderPreview();
+  renderInfo();
+  renderTimeline();
+  renderCurve('cv-l', st.lKeys, 0.4, 1.1);
+  renderCurve('cv-s', st.sKeys, 0.4, 1.2);
+}
+
+// ── Time helper ───────────────────────────────────────────────────
+function setTime(t) {
+  st.time = Math.max(0, Math.min(24, t));
+  document.getElementById('sl-time').value = st.time;
+  const h = Math.floor(st.time), m = Math.floor((st.time-h)*60);
+  document.getElementById('v-time').textContent =
+    `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  renderAll();
+}
+
+// ── Event wiring ──────────────────────────────────────────────────
+document.getElementById('sl-time').addEventListener('input', e => setTime(+e.target.value));
+document.getElementById('btn-now').addEventListener('click', () => {
+  const n = new Date();
+  setTime(n.getHours() + n.getMinutes()/60 + n.getSeconds()/3600);
+});
+
+document.getElementById('sl-temp').addEventListener('input', e => {
+  st.temp = +e.target.value;
+  document.getElementById('v-temp').textContent = `${st.temp}℃`;
+  renderAll();
+});
+document.getElementById('sl-tdiff').addEventListener('input', e => {
+  st.tdiff = +e.target.value;
+  const v = st.tdiff;
+  document.getElementById('v-tdiff').textContent = (v >= 0 ? '+' : '') + v + '℃';
+  renderAll();
+});
+document.getElementById('sl-wb').addEventListener('input', e => {
+  st.wbCoef = +e.target.value;
+  document.getElementById('v-wb').textContent = st.wbCoef.toFixed(2);
+  renderAll();
+});
+document.getElementById('sl-grad').addEventListener('input', e => {
+  st.gradCoef = +e.target.value;
+  document.getElementById('v-grad').textContent = st.gradCoef.toFixed(2);
+  renderAll();
+});
+
+document.querySelectorAll('.wxb').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.wxb').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    st.wx = b.dataset.wx;
+    refreshWxActive();
+    renderAll();
+  });
+});
+
+// Reset
+document.getElementById('btn-reset').addEventListener('click', () => {
+  Object.assign(st, {
+    wxColors: clone(DFLT.wxColors),
+    lKeys:    clone(DFLT.lKeys),
+    sKeys:    clone(DFLT.sKeys),
+    wbCoef:   DFLT.wbCoef,
+    gradCoef: DFLT.gradCoef,
+  });
+  document.getElementById('sl-wb').value   = st.wbCoef;
+  document.getElementById('v-wb').textContent = st.wbCoef.toFixed(2);
+  document.getElementById('sl-grad').value = st.gradCoef;
+  document.getElementById('v-grad').textContent = st.gradCoef.toFixed(2);
+  buildKfTable('tbl-l', st.lKeys, renderAll);
+  buildKfTable('tbl-s', st.sKeys, renderAll);
+  buildWxGrid();
+  renderAll();
+});
+
+// Timeline drag
+const tlCv = document.getElementById('tl-cv');
+function tlSet(e) {
+  const r = tlCv.getBoundingClientRect();
+  setTime(((e.clientX - r.left) / r.width) * 24);
+}
+tlCv.addEventListener('mousedown', tlSet);
+tlCv.addEventListener('mousemove', e => { if (e.buttons === 1) tlSet(e); });
+tlCv.addEventListener('touchstart', e => { e.preventDefault(); tlSet(e.touches[0]); }, {passive:false});
+tlCv.addEventListener('touchmove',  e => { e.preventDefault(); tlSet(e.touches[0]); }, {passive:false});
+
+// ── Copy to Claude ────────────────────────────────────────────────
+document.getElementById('btn-copy').addEventListener('click', () => {
+  const c = st.wxColors;
+  const wxLines = WX_KEYS.map(k =>
+    `- code ${WX_CODES[k]} (${WX_LABELS[k]}): h=${c[k].h}, s=${c[k].s}, l=${c[k].l}`
+  ).join('\n');
+  const fmt = v => parseFloat(v.toFixed(2));
+  const lStr = '[' + st.lKeys.map(([h,v]) => `[${h},${fmt(v)}]`).join(',') + ']';
+  const sStr = '[' + st.sKeys.map(([h,v]) => `[${h},${fmt(v)}]`).join(',') + ']';
+
+  const msg =
+`aircolor.htmlを以下の値で更新して。
+
+1. 天気ごとの基準色（WX_COLORSオブジェクト）を更新:
+${wxLines}
+
+2. L_KEYSを以下に更新:
+${lStr}
+
+3. S_KEYSを以下に更新:
+${sStr}
+
+4. tempWB関数のWB強度を${st.wbCoef}に変更:
+return Math.max(-12,Math.min(12,(t-15)*${st.wbCoef}))
+
+5. tempGrad関数のグラデーション強度を${st.gradCoef}に変更:
+const s=Math.max(-25,Math.min(25,d*${st.gradCoef}))`;
+
+  navigator.clipboard.writeText(msg).then(() => {
+    const btn = document.getElementById('btn-copy');
+    btn.textContent = 'コピーしました ✓';
+    btn.classList.add('ok');
+    setTimeout(() => {
+      btn.textContent = '値をコピーしてClaudeに送る';
+      btn.classList.remove('ok');
+    }, 2200);
+  });
+});
+
+// ── Resize → re-render canvases ───────────────────────────────────
+const ro = new ResizeObserver(() => renderAll());
+ro.observe(document.getElementById('right'));
+ro.observe(document.getElementById('tl-outer'));
+
+// ── Init ──────────────────────────────────────────────────────────
+buildWxGrid();
+buildKfTable('tbl-l', st.lKeys, renderAll);
+buildKfTable('tbl-s', st.sKeys, renderAll);
+const _now = new Date();
+setTime(_now.getHours() + _now.getMinutes()/60 + _now.getSeconds()/3600);
+</script>
+</body>
+</html>

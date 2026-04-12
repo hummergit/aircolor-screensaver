@@ -406,31 +406,15 @@ initLocation();
 setInterval(fetchWeather, 10 * 60 * 1000);
 
 // ── 背景色システム ────────────────────────────────────────────────
-function hexToHsl(hex) {
-  const r=parseInt(hex.slice(0,2),16)/255, g=parseInt(hex.slice(2,4),16)/255, b=parseInt(hex.slice(4,6),16)/255;
-  const max=Math.max(r,g,b), min=Math.min(r,g,b);
-  let h,s,l=(max+min)/2;
-  if(max===min){h=s=0;}
-  else{
-    const d=max-min; s=l>0.5?d/(2-max-min):d/(max+min);
-    switch(max){
-      case r:h=((g-b)/d+(g<b?6:0))/6;break;
-      case g:h=((b-r)/d+2)/6;break;
-      case b:h=((r-g)/d+4)/6;break;
-    }
-  }
-  return {h:h*360, s:s*100, l:l*100};
-}
-
 const WX_COLORS = {
-  sunny:   hexToHsl('FAD078'),
-  pcloudy: hexToHsl('DDE4D8'),
-  cloudy:  hexToHsl('CCD8CE'),
-  fog:     hexToHsl('C8D0CC'),
-  rain:    hexToHsl('A2D2EC'),
-  snow:    hexToHsl('EBF2F7'),
-  shower:  hexToHsl('B8C8DC'),
-  storm:   hexToHsl('D4CCD8'),
+  sunny:   {h: 38,  s: 87, l: 72},
+  pcloudy: {h:120,  s: 15, l: 80},
+  cloudy:  {h:140,  s: 12, l: 78},
+  fog:     {h:150,  s:  8, l: 80},
+  rain:    {h:200,  s: 60, l: 78},
+  snow:    {h:210,  s: 35, l: 88},
+  shower:  {h:213,  s: 34, l: 79},
+  storm:   {h:270,  s: 20, l: 78},
 };
 function wxToBase(code) {
   if (code == null) return WX_COLORS.sunny;
@@ -445,16 +429,20 @@ function wxToBase(code) {
 }
 
 const L_KEYS = [
-  [0,0.72],[5,0.74],[6,0.82],[8,0.90],
-  [12,1.00],[15,0.97],[17,0.88],[19,0.80],[22,0.75],[24,0.72],
+  [0,0.65],[3,0.73],[6,0.81],[8,0.88],[10,0.95],[12,1.00],[15,0.91],[17,0.86],[19,0.80],[21,0.74],[24,0.65],
 ];
-function timeLRatio(hf) {
+const S_KEYS = [
+  [0,0.55],[3,0.67],[6,0.78],[8,0.87],[10,0.96],[12,1.05],[15,0.94],[17,0.85],[19,0.75],[21,0.64],[24,0.55],
+];
+function interpKeys(keys, hf) {
   let i=0;
-  while(i<L_KEYS.length-2 && L_KEYS[i+1][0]<=hf) i++;
-  const [h0,l0]=L_KEYS[i],[h1,l1]=L_KEYS[i+1];
-  return l0+(l1-l0)*((hf-h0)/(h1-h0));
+  while(i<keys.length-2 && keys[i+1][0]<=hf) i++;
+  const [h0,v0]=keys[i],[h1,v1]=keys[i+1];
+  return v0+(v1-v0)*((hf-h0)/(h1-h0));
 }
-function tempWB(t)  { if(t==null)return 0; return Math.max(-12,Math.min(12,(t-15)*-1.0)); }
+function timeLRatio(hf) { return interpKeys(L_KEYS, hf); }
+function timeSRatio(hf) { return interpKeys(S_KEYS, hf); }
+function tempWB(t)  { if(t==null)return 0; return Math.max(-12,Math.min(12,(t-15)*-0.5)); }
 function tempGrad(d){ const s=Math.max(-25,Math.min(25,d*3.5)); return {left:s,right:-s}; }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 function hslStr(h,s,l){ return `hsl(${h.toFixed(1)},${clamp(s,5,70).toFixed(1)}%,${clamp(l,8,95).toFixed(1)}%)`; }
@@ -495,10 +483,11 @@ function bgTick() {
   const wb   = tempWB(wxTemp);
   const grad = tempGrad(wxTempDiff);
   const lgt  = Math.max(8, base.l * timeLRatio(hf));
+  const sat  = Math.max(5, base.s * timeSRatio(hf));
 
   if (bgReady) {
     // 天気取得後: ターゲットに即スナップしてからフェードイン開始
-    cur.hBase = base.h; cur.s = base.s; cur.l = lgt;
+    cur.hBase = base.h; cur.s = sat; cur.l = lgt;
     cur.wb = wb; cur.gradL = grad.left; cur.gradR = grad.right;
     bgReady = false;
     if (!fadeStarted) {
@@ -511,7 +500,7 @@ function bgTick() {
     // フェードイン後: 通常のゆっくりlerp
     const k = 0.004;
     cur.hBase += (base.h - cur.hBase)*k;
-    cur.s     += (base.s - cur.s)*k;
+    cur.s     += (sat    - cur.s)*k;
     cur.l     += (lgt    - cur.l)*k;
     cur.wb    += (wb     - cur.wb)*k;
     cur.gradL += (grad.left  - cur.gradL)*k;
