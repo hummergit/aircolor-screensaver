@@ -19,7 +19,7 @@ As I use it myself, the design and display may be updated based on my own needs.
   - Weather condition (sunny = warm orange, rain = cool blue, etc.)
   - Time of day (subtle brightness variation)
   - Temperature (warm/cool white balance shift)
-  - Temperature difference from yesterday (left-to-right gradient: cool → warm when today is warmer)
+  - Temperature difference from yesterday (left-to-right gradient)
 - **Floating particles** — Minimal ambient animation
 - **Dynamic favicon** — Browser tab icon updates in real time to match the current background color
 
@@ -71,7 +71,7 @@ The background color is composed of four axes:
 | 1 | Weather code | Base hue and saturation |
 | 2 | Time of day | Lightness ratio (0.72–1.00) |
 | 3 | Current temperature | White balance shift (warm/cool) |
-| 4 | Temp diff from yesterday | Left-to-right gradient (cool left → warm right when today is warmer) |
+| 4 | Temp diff from yesterday | Left-to-right gradient |
 
 **Weather base colors:**
 | Condition | Color | Hex |
