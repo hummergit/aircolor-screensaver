@@ -71,6 +71,8 @@ body {
 /* ── Overview grid ───────────────────────────────────────────────── */
 #ov-wrap {
   flex-shrink: 0;
+  max-height: 38vh;
+  overflow-y: auto;
   padding: 8px 16px 10px;
   border-bottom: 1px solid var(--bdr);
   background: var(--sur2);
@@ -124,6 +126,95 @@ body {
   font-size: 8px; font-family: monospace; font-weight: 600;
   color: rgba(255,255,255,0.82);
   text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+}
+
+/* ── Overview tabs ───────────────────────────────────────────────── */
+#ov-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.ov-tab {
+  background: var(--sur); border: 1px solid var(--bdr);
+  color: var(--dim); border-radius: 4px; padding: 4px 12px;
+  font-size: 11px; cursor: pointer; font-weight: 500; transition: all 0.12s;
+}
+.ov-tab:hover { color: var(--txt); }
+.ov-tab.active {
+  background: rgba(91,156,246,0.15); border-color: var(--acc); color: var(--acc);
+}
+
+/* ── Time × Weather grid ─────────────────────────────────────────── */
+#tw-grid {
+  display: grid;
+  grid-template-columns: 70px repeat(10, 1fr);
+  gap: 3px;
+}
+.tw-ch {
+  height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--dim); font-family: monospace; font-weight: 600;
+}
+.tw-rh {
+  height: 90px;
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; padding: 0 2px;
+  white-space: nowrap; overflow: hidden;
+}
+.tw-rh-emoji { font-size: 13px; line-height: 1; flex-shrink: 0; }
+.tw-rh-name  { font-size: 10px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; }
+
+.tw-cell {
+  height: 90px; border-radius: 3px; cursor: pointer;
+  position: relative; border: 2px solid transparent;
+  overflow: hidden; transition: filter 0.1s, border-color 0.12s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+}
+.tw-cell:hover { filter: brightness(1.12); }
+.tw-cell.sel { border-color: rgba(255,255,255,0.85); box-shadow: 0 0 0 1px rgba(255,255,255,0.2); }
+.tw-cell-time {
+  font-size: 22px; font-weight: 600; font-family: monospace; line-height: 1;
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+.tw-cell-sub { display: flex; align-items: center; gap: 4px; }
+.tw-cell-icon {
+  font-size: 11px; line-height: 1;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+.tw-cell-diff {
+  font-size: 10px; font-family: monospace; font-weight: 600;
+  color: rgba(255,255,255,0.82); text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+}
+
+/* ── Fullscreen overlay ──────────────────────────────────────────── */
+#fs-overlay {
+  position: fixed; inset: 0; z-index: 9999; cursor: pointer;
+  color: #fff; --m: min(3.5vw, 3.5vh);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+#fs-date {
+  position: absolute; left: var(--m); top: var(--m);
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: clamp(4px, 1vh, 12px); pointer-events: none;
+}
+#fs-date-year  { font-size: clamp(12px, 1.6vw, 28px); opacity: 0.9; }
+#fs-date-month { font-size: clamp(16px, 2.2vw, 40px); opacity: 0.95; }
+#fs-date-day   { font-size: clamp(40px, 6vw, 100px); opacity: 0.95; letter-spacing: -0.02em; }
+#fs-clock {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: clamp(70px, 13vw, 200px); font-weight: 300;
+  letter-spacing: -0.02em; pointer-events: none;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.25);
+}
+#fs-wx {
+  position: absolute; left: var(--m); bottom: var(--m);
+  display: flex; align-items: center; gap: clamp(8px, 1vw, 16px);
+  pointer-events: none;
+}
+#fs-wx-icon  { font-size: clamp(28px, 4vw, 60px); line-height: 1; }
+#fs-wx-label { font-size: clamp(14px, 2vw, 34px); opacity: 0.9; }
+#fs-hint {
+  position: absolute; right: var(--m); bottom: var(--m);
+  font-size: clamp(10px, 1.2vw, 16px); opacity: 0.45;
+  pointer-events: none; letter-spacing: 0.04em;
 }
 
 /* ── Main two-pane ───────────────────────────────────────────────── */
@@ -237,10 +328,18 @@ input[type=range] { flex: 1; accent-color: var(--acc); cursor: pointer; }
   </div>
 </div>
 
-<!-- Overview grid: weather × temp-diff -->
+<!-- Overview grid (tabbed) -->
 <div id="ov-wrap">
-  <div id="ov-ttl">天気 × 気温差 — 現在時刻での色一覧</div>
-  <div id="ov-grid"></div>
+  <div id="ov-tabs">
+    <button class="ov-tab active" data-tab="wx">天気 × 気温差</button>
+    <button class="ov-tab" data-tab="time">時間 × 天気</button>
+  </div>
+  <div id="ov-panel-wx">
+    <div id="ov-grid"></div>
+  </div>
+  <div id="ov-panel-time" style="display:none">
+    <div id="tw-grid"></div>
+  </div>
 </div>
 
 <!-- Main -->
@@ -338,6 +437,21 @@ input[type=range] { flex: 1; accent-color: var(--acc); cursor: pointer; }
 
 </div><!-- /main -->
 
+<!-- Fullscreen preview overlay -->
+<div id="fs-overlay" style="display:none">
+  <div id="fs-date">
+    <div id="fs-date-year"></div>
+    <div id="fs-date-month"></div>
+    <div id="fs-date-day"></div>
+  </div>
+  <div id="fs-clock"></div>
+  <div id="fs-wx">
+    <span id="fs-wx-icon"></span>
+    <span id="fs-wx-label"></span>
+  </div>
+  <div id="fs-hint">ESC / クリックで閉じる</div>
+</div>
+
 <script>
 // ── Defaults ──────────────────────────────────────────────────────
 const DFLT = {
@@ -361,6 +475,7 @@ const WX_LABELS = {sunny:'快晴',pcloudy:'薄曇り',cloudy:'曇り',fog:'霧',
 const WX_CODES  = {sunny:'0',pcloudy:'2',cloudy:'3',fog:'45',rain:'61',snow:'71',shower:'81',storm:'95'};
 const WX_EMOJI  = {sunny:'☀️',pcloudy:'🌤️',cloudy:'☁️',fog:'🌫️',rain:'🌧️',snow:'🌨️',shower:'🌦️',storm:'⛈️'};
 const OV_DIFFS  = [-10, -5, 0, 5, 10];
+const TW_HOURS  = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
 
 // ── State ─────────────────────────────────────────────────────────
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -505,6 +620,7 @@ function buildOverviewGrid() {
           (d > 0 ? '+' : d === 0 ? '±' : '') + d + '℃';
         refreshWxActive();
         renderAll();
+        openFullscreen(wxKey, d, st.time, st.temp);
       });
 
       grid.appendChild(cell);
@@ -525,6 +641,107 @@ function renderOverviewGrid() {
       cell.classList.toggle('sel', wxKey === st.wx && d === st.tdiff);
     });
   });
+}
+
+// ── Time × Weather grid ───────────────────────────────────────────
+function buildTimeWeatherGrid() {
+  const grid = document.getElementById('tw-grid');
+  grid.innerHTML = '';
+
+  // Top-left corner
+  grid.appendChild(document.createElement('div'));
+
+  // Column headers
+  TW_HOURS.forEach(hf => {
+    const ch = document.createElement('div');
+    ch.className = 'tw-ch';
+    ch.textContent = `${String(hf).padStart(2,'0')}:00`;
+    grid.appendChild(ch);
+  });
+
+  // Rows: each weather type
+  WX_KEYS.forEach(wxKey => {
+    const rh = document.createElement('div');
+    rh.className = 'tw-rh';
+    rh.innerHTML =
+      `<span class="tw-rh-emoji">${WX_EMOJI[wxKey]}</span>` +
+      `<span class="tw-rh-name">${WX_LABELS[wxKey]}</span>`;
+    grid.appendChild(rh);
+
+    TW_HOURS.forEach(hf => {
+      const cell = document.createElement('div');
+      cell.className = 'tw-cell';
+      cell.id = `tw-${wxKey}-${hf}`;
+
+      const timeEl = document.createElement('div');
+      timeEl.className = 'tw-cell-time';
+      timeEl.textContent = `${String(hf).padStart(2,'0')}:00`;
+
+      const subEl = document.createElement('div');
+      subEl.className = 'tw-cell-sub';
+      const iconEl = document.createElement('span');
+      iconEl.className = 'tw-cell-icon';
+      iconEl.textContent = WX_EMOJI[wxKey];
+      const diffEl = document.createElement('span');
+      diffEl.className = 'tw-cell-diff';
+      diffEl.id = `tw-diff-${wxKey}-${hf}`;
+      subEl.appendChild(iconEl);
+      subEl.appendChild(diffEl);
+
+      cell.appendChild(timeEl);
+      cell.appendChild(subEl);
+
+      cell.addEventListener('click', () => {
+        openFullscreen(wxKey, st.tdiff, hf, st.temp);
+      });
+
+      grid.appendChild(cell);
+    });
+  });
+}
+
+function renderTimeWeatherGrid() {
+  const d = st.tdiff;
+  const dStr = (d > 0 ? '+' : d === 0 ? '±' : '') + d + '℃';
+  WX_KEYS.forEach(wxKey => {
+    TW_HOURS.forEach(hf => {
+      const cell = document.getElementById(`tw-${wxKey}-${hf}`);
+      if (!cell) return;
+      const {hL, hR, s, l, gd} = computeFor(wxKey, d, hf, st.temp);
+      cell.style.background = gd < 0.5
+        ? hsl(hL, s, l)
+        : `linear-gradient(to right,${hsl(hL,s,l)},${hsl(hR,s,l)})`;
+      const diffEl = document.getElementById(`tw-diff-${wxKey}-${hf}`);
+      if (diffEl) diffEl.textContent = dStr;
+    });
+  });
+}
+
+// ── Fullscreen preview ────────────────────────────────────────────
+function openFullscreen(wxKey, tdiffVal, timeVal, tempVal) {
+  const {hL, hR, s, l, gd} = computeFor(wxKey, tdiffVal, timeVal, tempVal);
+  const ov = document.getElementById('fs-overlay');
+  ov.style.background = gd < 0.5
+    ? hsl(hL, s, l)
+    : `linear-gradient(to right,${hsl(hL,s,l)},${hsl(hR,s,l)})`;
+
+  const hh = Math.floor(timeVal);
+  const mm = Math.floor((timeVal - hh) * 60);
+  document.getElementById('fs-clock').textContent =
+    `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+
+  const now = new Date();
+  document.getElementById('fs-date-year').textContent  = now.getFullYear() + '年';
+  document.getElementById('fs-date-month').textContent = (now.getMonth()+1) + '月';
+  document.getElementById('fs-date-day').textContent   = now.getDate();
+  document.getElementById('fs-wx-icon').textContent    = WX_EMOJI[wxKey];
+  document.getElementById('fs-wx-label').textContent   = WX_LABELS[wxKey];
+
+  ov.style.display = 'block';
+}
+
+function closeFullscreen() {
+  document.getElementById('fs-overlay').style.display = 'none';
 }
 
 // ── Curve canvas ──────────────────────────────────────────────────
@@ -661,6 +878,7 @@ function renderAll() {
   renderInfo();
   renderTimeline();
   renderOverviewGrid();
+  renderTimeWeatherGrid();
   renderCurve('cv-l', st.lKeys, 0.4, 1.1);
   renderCurve('cv-s', st.sKeys, 0.4, 1.2);
 }
@@ -781,6 +999,21 @@ const s=Math.max(-25,Math.min(25,d*${st.gradCoef}))`;
   });
 });
 
+// ── Tab switching ─────────────────────────────────────────────────
+document.querySelectorAll('.ov-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ov-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const which = tab.dataset.tab;
+    document.getElementById('ov-panel-wx').style.display   = which === 'wx'   ? '' : 'none';
+    document.getElementById('ov-panel-time').style.display = which === 'time' ? '' : 'none';
+  });
+});
+
+// ── Fullscreen close ──────────────────────────────────────────────
+document.getElementById('fs-overlay').addEventListener('click', closeFullscreen);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFullscreen(); });
+
 // ── Resize → re-render ────────────────────────────────────────────
 const ro = new ResizeObserver(() => renderAll());
 ro.observe(document.getElementById('right'));
@@ -788,6 +1021,7 @@ ro.observe(document.getElementById('tl-outer'));
 
 // ── Init ──────────────────────────────────────────────────────────
 buildOverviewGrid();
+buildTimeWeatherGrid();
 buildWxGrid();
 buildKfTable('tbl-l', st.lKeys, renderAll);
 buildKfTable('tbl-s', st.sKeys, renderAll);
