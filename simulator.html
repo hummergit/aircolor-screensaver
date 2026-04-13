@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>AirColor Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -186,35 +189,69 @@ body {
 /* ── Fullscreen overlay ──────────────────────────────────────────── */
 #fs-overlay {
   position: fixed; inset: 0; z-index: 9999; cursor: pointer;
+  font-family: 'Roboto', sans-serif; font-weight: 400;
   color: #fff; --m: min(3.5vw, 3.5vh);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
-#fs-date {
+#fs-bg {
+  position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;
+}
+/* 左上: 日付 */
+#fs-date-block {
   position: absolute; left: var(--m); top: var(--m);
   display: flex; flex-direction: column; align-items: flex-start;
-  gap: clamp(4px, 1vh, 12px); pointer-events: none;
+  gap: clamp(8px, 1.5vh, 20px); pointer-events: none;
 }
-#fs-date-year  { font-size: clamp(12px, 1.6vw, 28px); opacity: 0.9; }
-#fs-date-month { font-size: clamp(16px, 2.2vw, 40px); opacity: 0.95; }
-#fs-date-day   { font-size: clamp(40px, 6vw, 100px); opacity: 0.95; letter-spacing: -0.02em; }
-#fs-clock {
+#fs-date-year  { font-size: clamp(14px, 1.8vw, 32px); line-height: 1; opacity: 0.9; }
+#fs-date-month { font-size: clamp(18px, 2.5vw, 48px); line-height: 1; opacity: 0.95; }
+#fs-date-day   { font-size: clamp(48px, 7vw, 120px);  line-height: 1; opacity: 0.95; letter-spacing: -0.02em; }
+/* 右上: 都市名 */
+#fs-city-block {
+  position: absolute; right: var(--m); top: var(--m);
+  font-size: clamp(14px, 1.8vw, 32px); line-height: 1;
+  letter-spacing: 0.06em; opacity: 0.75; pointer-events: none;
+}
+/* 中央: 時計 */
+#fs-clock-block {
   position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  font-size: clamp(70px, 13vw, 200px); font-weight: 300;
-  letter-spacing: -0.02em; pointer-events: none;
-  text-shadow: 0 2px 20px rgba(0,0,0,0.25);
+  transform: translate(-50%, -50%);
+  display: flex; align-items: flex-end;
+  gap: clamp(6px, 1vw, 20px); pointer-events: none;
 }
-#fs-wx {
+#fs-clock-hhmm {
+  font-size: clamp(80px, 13vw, 200px); line-height: 1; letter-spacing: -0.02em;
+}
+#fs-clock-ss {
+  font-size: clamp(24px, 3.2vw, 52px); line-height: 1; padding-bottom: 0.1em; opacity: 0.75;
+}
+/* 左下: 天気 */
+#fs-wx-block {
   position: absolute; left: var(--m); bottom: var(--m);
-  display: flex; align-items: center; gap: clamp(8px, 1vw, 16px);
-  pointer-events: none;
+  display: flex; flex-direction: row; align-items: center;
+  gap: clamp(8px, 1vw, 17px); pointer-events: none;
 }
-#fs-wx-icon  { font-size: clamp(28px, 4vw, 60px); line-height: 1; }
-#fs-wx-label { font-size: clamp(14px, 2vw, 34px); opacity: 0.9; }
+#fs-wx-icon-col {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: clamp(4px, 0.8vh, 12px);
+}
+#fs-wx-icon .material-icons { font-size: clamp(28px, 3.5vw, 60px); display: block; line-height: 1; }
+#fs-wx-precip-row { display: flex; align-items: center; gap: 3px; }
+#fs-wx-precip-row .material-icons { font-size: clamp(12px, 1.4vw, 24px); display: block; line-height: 1; }
+#fs-wx-precip-num { font-size: clamp(10px, 1.3vw, 20px); line-height: 1; }
+#fs-wx-precip-pct { font-size: clamp(7px, 0.7vw, 10px); line-height: 1; padding-bottom: 0.1em; }
+#fs-wx-temp-col {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: clamp(6px, 1vh, 20px);
+}
+.fs-temp-row { display: flex; flex-direction: row; align-items: flex-end; gap: 0; }
+.fs-temp-num { width: 2.2em; text-align: right; display: block; font-size: clamp(20px, 2.8vw, 48px); line-height: 1; }
+.fs-temp-unit { font-size: clamp(9px, 1.1vw, 20px); line-height: 1; padding-bottom: 0.12em; padding-left: 0.15em; }
+.fs-temp-diff { font-size: clamp(9px, 1.1vw, 20px); line-height: 1; padding-bottom: 0.12em; padding-left: 0.3em; min-width: 2em; }
+/* ESCヒント */
 #fs-hint {
   position: absolute; right: var(--m); bottom: var(--m);
   font-size: clamp(10px, 1.2vw, 16px); opacity: 0.45;
   pointer-events: none; letter-spacing: 0.04em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* ── Main two-pane ───────────────────────────────────────────────── */
@@ -439,16 +476,48 @@ input[type=range] { flex: 1; accent-color: var(--acc); cursor: pointer; }
 
 <!-- Fullscreen preview overlay -->
 <div id="fs-overlay" style="display:none">
-  <div id="fs-date">
+  <canvas id="fs-bg"></canvas>
+
+  <!-- 左上: 日付 -->
+  <div id="fs-date-block">
     <div id="fs-date-year"></div>
     <div id="fs-date-month"></div>
     <div id="fs-date-day"></div>
   </div>
-  <div id="fs-clock"></div>
-  <div id="fs-wx">
-    <span id="fs-wx-icon"></span>
-    <span id="fs-wx-label"></span>
+
+  <!-- 右上: 都市名 -->
+  <div id="fs-city-block">TOKYO</div>
+
+  <!-- 中央: 時計 -->
+  <div id="fs-clock-block">
+    <div id="fs-clock-hhmm">--:--</div>
+    <div id="fs-clock-ss">00</div>
   </div>
+
+  <!-- 左下: 天気 -->
+  <div id="fs-wx-block">
+    <div id="fs-wx-icon-col">
+      <div id="fs-wx-icon"><span class="material-icons">wb_sunny</span></div>
+      <div id="fs-wx-precip-row">
+        <span class="material-icons">water_drop</span>
+        <span id="fs-wx-precip-num">--</span>
+        <span id="fs-wx-precip-pct">%</span>
+      </div>
+    </div>
+    <div id="fs-wx-temp-col">
+      <div class="fs-temp-row">
+        <span id="fs-wx-high" class="fs-temp-num">--</span>
+        <span class="fs-temp-unit">℃</span>
+        <span id="fs-wx-high-diff" class="fs-temp-diff"></span>
+      </div>
+      <div class="fs-temp-row">
+        <span id="fs-wx-low" class="fs-temp-num">--</span>
+        <span class="fs-temp-unit">℃</span>
+        <span id="fs-wx-low-diff" class="fs-temp-diff"></span>
+      </div>
+    </div>
+  </div>
+
   <div id="fs-hint">ESC / クリックで閉じる</div>
 </div>
 
@@ -717,6 +786,61 @@ function renderTimeWeatherGrid() {
   });
 }
 
+// ── wmoIcon (aircolor.htmlと同一) ─────────────────────────────────
+function wmoIcon(code) {
+  if (code <= 1)  return 'wb_sunny';
+  if (code === 2) return 'partly_cloudy_day';
+  if (code === 3) return 'cloud';
+  if (code <= 48) return 'foggy';
+  if (code <= 67) return 'water_drop';
+  if (code <= 77) return 'ac_unit';
+  if (code <= 82) return 'rainy';
+  return 'thunderstorm';
+}
+const WX_PRECIP = {sunny:5, pcloudy:15, cloudy:30, fog:20, rain:80, snow:70, shower:60, storm:90};
+const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
+                'JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+
+// ── Fullscreen particles (aircolor.htmlと同一) ────────────────────
+let fsAnimId = null;
+const fsCv  = document.getElementById('fs-bg');
+const fsCx  = fsCv.getContext('2d');
+
+function mkFsP() {
+  const a = Math.random() * Math.PI * 2;
+  return {
+    x: Math.random(), y: Math.random(),
+    vx: Math.cos(a) * (Math.random() * 0.06 + 0.02),
+    vy: Math.sin(a) * (Math.random() * 0.06 + 0.02),
+    r:    Math.random() * 1.2 + 0.3,
+    aMax: Math.random() * 0.18 + 0.04,
+    phase: Math.random() * Math.PI * 2,
+    bT: Math.random() * 8  + 6,
+    dT: Math.random() * 20 + 15,
+    dA: Math.random() * Math.PI * 2,
+  };
+}
+const fsPts = Array.from({length: 55}, mkFsP);
+fsPts.forEach((p, i) => p.phase = (i / 55) * Math.PI * 2);
+
+function fsAnimTick(ts) {
+  const t = ts / 1000;
+  const w = fsCv.width, h = fsCv.height;
+  fsCx.clearRect(0, 0, w, h);
+  fsPts.forEach(p => {
+    const da = (t / p.dT) * Math.PI * 2 + p.dA;
+    p.vx += (Math.cos(da) * (p.r * 0.1 + 0.02) - p.vx) * 0.008;
+    p.vy += (Math.sin(da) * (p.r * 0.1 + 0.02) - p.vy) * 0.008;
+    p.x += p.vx / w; p.y += p.vy / h;
+    if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
+    if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
+    fsCx.globalAlpha = p.aMax * (0.5 + 0.5 * Math.sin(t / p.bT * Math.PI * 2 + p.phase));
+    fsCx.fillStyle = '#fff';
+    fsCx.beginPath(); fsCx.arc(p.x * w, p.y * h, p.r, 0, Math.PI * 2); fsCx.fill();
+  });
+  fsAnimId = requestAnimationFrame(fsAnimTick);
+}
+
 // ── Fullscreen preview ────────────────────────────────────────────
 function openFullscreen(wxKey, tdiffVal, timeVal, tempVal) {
   const {hL, hR, s, l, gd} = computeFor(wxKey, tdiffVal, timeVal, tempVal);
@@ -725,23 +849,46 @@ function openFullscreen(wxKey, tdiffVal, timeVal, tempVal) {
     ? hsl(hL, s, l)
     : `linear-gradient(to right,${hsl(hL,s,l)},${hsl(hR,s,l)})`;
 
-  const hh = Math.floor(timeVal);
-  const mm = Math.floor((timeVal - hh) * 60);
-  document.getElementById('fs-clock').textContent =
+  // 時刻（セルの時刻を固定表示）
+  const hh = Math.floor(timeVal), mm = Math.floor((timeVal - hh) * 60);
+  document.getElementById('fs-clock-hhmm').textContent =
     `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+  document.getElementById('fs-clock-ss').textContent = '00';
 
+  // 日付（今日の実際の日付）
   const now = new Date();
-  document.getElementById('fs-date-year').textContent  = now.getFullYear() + '年';
-  document.getElementById('fs-date-month').textContent = (now.getMonth()+1) + '月';
+  document.getElementById('fs-date-year').textContent  = now.getFullYear();
+  document.getElementById('fs-date-month').textContent = MONTHS[now.getMonth()];
   document.getElementById('fs-date-day').textContent   = now.getDate();
-  document.getElementById('fs-wx-icon').textContent    = WX_EMOJI[wxKey];
-  document.getElementById('fs-wx-label').textContent   = WX_LABELS[wxKey];
 
+  // 天気アイコン（Material Icons）
+  document.getElementById('fs-wx-icon').innerHTML =
+    `<span class="material-icons">${wmoIcon(parseInt(WX_CODES[wxKey]))}</span>`;
+
+  // 降水確率
+  document.getElementById('fs-wx-precip-num').textContent = WX_PRECIP[wxKey];
+
+  // 気温
+  const tH   = Math.round(tempVal + 3);
+  const tL   = Math.round(tempVal - 5);
+  const diff = Math.round(tdiffVal);
+  const sign = v => (v >= 0 ? '+' : '') + v;
+  document.getElementById('fs-wx-high').textContent      = tH;
+  document.getElementById('fs-wx-high-diff').textContent = sign(diff);
+  document.getElementById('fs-wx-low').textContent       = tL;
+  document.getElementById('fs-wx-low-diff').textContent  = sign(diff);
+
+  // canvas リサイズ → パーティクル開始
+  fsCv.width  = window.innerWidth;
+  fsCv.height = window.innerHeight;
   ov.style.display = 'block';
+  if (fsAnimId) cancelAnimationFrame(fsAnimId);
+  fsAnimId = requestAnimationFrame(fsAnimTick);
 }
 
 function closeFullscreen() {
   document.getElementById('fs-overlay').style.display = 'none';
+  if (fsAnimId) { cancelAnimationFrame(fsAnimId); fsAnimId = null; }
 }
 
 // ── Curve canvas ──────────────────────────────────────────────────
