@@ -104,6 +104,9 @@ html, body {
   align-items: flex-start;
   gap: clamp(4px, 0.8vh, 12px);
 }
+#wx-icon {
+  min-height: clamp(28px, 3.5vw, 60px);
+}
 #wx-icon .material-icons {
   font-size: clamp(28px, 3.5vw, 60px);
   display: block;
@@ -344,12 +347,12 @@ function nearestCity(lat, lon) {
 // ── 天気 ─────────────────────────────────────────────────────────
 function wmoIcon(code) {
   if (code <= 1)  return 'wb_sunny';
-  if (code === 2) return 'partly_cloudy_day';
+  if (code === 2) return 'wb_cloudy';
   if (code === 3) return 'cloud';
   if (code <= 48) return 'foggy';
   if (code <= 67) return 'water_drop';
   if (code <= 77) return 'ac_unit';
-  if (code <= 82) return 'rainy';
+  if (code <= 82) return 'shower';
   return 'thunderstorm';
 }
 function fmtDiff(d) { return (d >= 0 ? '+' : '') + d; }
@@ -408,12 +411,12 @@ setInterval(fetchWeather, 10 * 60 * 1000);
 // ── 背景色システム ────────────────────────────────────────────────
 const WX_COLORS = {
   sunny:   {h: 38,  s: 87, l: 72},
-  pcloudy: {h:120,  s: 15, l: 80},
+  pcloudy: {h: 44,  s: 36, l: 87},
   cloudy:  {h:140,  s: 12, l: 78},
-  fog:     {h:150,  s:  8, l: 80},
+  fog:     {h:150,  s:  8, l: 91},
   rain:    {h:200,  s: 60, l: 78},
   snow:    {h:210,  s: 35, l: 88},
-  shower:  {h:213,  s: 34, l: 79},
+  shower:  {h:197,  s: 34, l: 79},
   storm:   {h:270,  s: 20, l: 78},
 };
 function wxToBase(code) {
