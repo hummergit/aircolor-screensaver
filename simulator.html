@@ -246,13 +246,6 @@ body {
 .fs-temp-num { width: 2.2em; text-align: right; display: block; font-size: clamp(20px, 2.8vw, 48px); line-height: 1; }
 .fs-temp-unit { font-size: clamp(9px, 1.1vw, 20px); line-height: 1; padding-bottom: 0.12em; padding-left: 0.15em; }
 .fs-temp-diff { font-size: clamp(9px, 1.1vw, 20px); line-height: 1; padding-bottom: 0.12em; padding-left: 0.3em; min-width: 2em; }
-/* ESCヒント */
-#fs-hint {
-  position: absolute; right: var(--m); bottom: var(--m);
-  font-size: clamp(10px, 1.2vw, 16px); opacity: 0.45;
-  pointer-events: none; letter-spacing: 0.04em;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
 
 /* ── Main two-pane ───────────────────────────────────────────────── */
 #main {
@@ -518,7 +511,6 @@ input[type=range] { flex: 1; accent-color: var(--acc); cursor: pointer; }
     </div>
   </div>
 
-  <div id="fs-hint">ESC / クリックで閉じる</div>
 </div>
 
 <script>
