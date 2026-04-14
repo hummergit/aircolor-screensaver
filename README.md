@@ -5,7 +5,7 @@ AirColor Screensaver brings the outside air into your room through color — shi
 Built as a personal tool. If you like it, feel free to use it.
 As I use it myself, the design and display may be updated based on my own needs.
 
-![Screensaver Preview](./preview.png)
+[![Screensaver Preview](./preview.png)](https://hummergit.github.io/aircolor-screensaver/aircolor.html)
 
 ---
 
