@@ -128,7 +128,7 @@ If you've made customizations or found your own way to enjoy it, I'd love to hea
 |-------------|--------|------|
 | macOS Sequoia + WebViewScreenSaver 2.x | ✅ | Author's environment |
 
-If you've tested this on your machine, please leave a comment on the [note article](#) or open an issue here. I'll add your environment to the list.
+If you've tested this on your machine, please leave a comment on the [note article](https://note.com/takahummer/n/n12aef5846a5c) or open an issue here. I'll add your environment to the list.
 
 ---
 
