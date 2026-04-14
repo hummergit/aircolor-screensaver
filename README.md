@@ -17,7 +17,7 @@ As I use it myself, the design and display may be updated based on my own needs.
 - **Weather** — Icon, high/low temperature, difference from yesterday, precipitation probability
 - **Dynamic background** — Color changes based on:
   - Weather condition (sunny = warm orange, rain = cool blue, etc.)
-  - Time of day (subtle brightness variation)
+  - Time of day (subtle brightness and saturation variation)
   - Temperature (warm/cool white balance shift)
   - Temperature difference from yesterday (left-to-right gradient)
 - **Floating particles** — Minimal ambient animation
@@ -60,6 +60,20 @@ Download `aircolor.html` from this repository and save it anywhere on your Mac (
 
 ---
 
+## Color Simulator
+
+A browser-based simulator is available to preview and adjust the color system:
+
+**[Open Simulator](https://hummergit.github.io/aircolor-screensaver/simulator.html)**
+
+The simulator lets you:
+- Preview all weather × time × temperature combinations
+- Adjust weather base colors, brightness curves, and saturation curves
+- Open a full-screen preview for each combination
+- Copy adjusted values to apply to `aircolor.html`
+
+---
+
 ## How It Works
 
 ### Background Color System
@@ -69,7 +83,7 @@ The background color is composed of four axes:
 | Axis | Variable | Effect |
 |------|----------|--------|
 | 1 | Weather code | Base hue and saturation |
-| 2 | Time of day | Lightness ratio (0.72–1.00) |
+| 2 | Time of day | Lightness and saturation ratio |
 | 3 | Current temperature | White balance shift (warm/cool) |
 | 4 | Temp diff from yesterday | Left-to-right gradient |
 
@@ -77,7 +91,7 @@ The background color is composed of four axes:
 | Condition | Color | Hex |
 |-----------|-------|-----|
 | Sunny | Warm orange | `#FAD078` |
-| Partly cloudy | Muted green-gray | `#DDE4D8` |
+| Partly cloudy | Muted yellow | `#DDE4A8` |
 | Cloudy | Green-gray | `#CCD8CE` |
 | Fog | Cool gray | `#C8D0CC` |
 | Rain | Light blue | `#A2D2EC` |
