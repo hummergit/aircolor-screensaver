@@ -60,6 +60,17 @@ Download `aircolor.html` from this repository and save it anywhere on your Mac (
 
 ---
 
+## Windows
+
+On Windows, you can use [Web-Page-Screensaver](https://github.com/cwc/web-page-screensaver) to display AirColor as a screensaver.
+
+1. Download `Web-Page-Screensaver.scr` from the [releases page](https://github.com/cwc/web-page-screensaver/releases)
+2. Right-click the file → **Install**
+3. Open **Screen Saver Settings** and select **Web-Page-Screensaver**
+4. Click **Settings...** and enter the URL:
+
+---
+
 ## Color Simulator
 
 A browser-based simulator is available to preview and adjust the color system:
