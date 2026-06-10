@@ -34,14 +34,6 @@ html, body {
 /* ── レイアウト: viewport基準、各コーナーに固定 ── */
 /* 1920px固定キャンバスは使わず、vw/vh + clamp で対応 */
 
-#bg {
-  position: fixed;
-  inset: 0;
-  width: 100%; height: 100%;
-  pointer-events: none;
-  z-index: 0;
-}
-
 /* 共通マージン: 画面短辺の3.5% */
 :root { --m: min(3.5vw, 3.5vh); }
 
@@ -162,7 +154,6 @@ html, body {
 <body>
 
 <div id="fade-overlay"></div>
-<canvas id="bg"></canvas>
 
 <!-- 左上: 日付 -->
 <div id="date-block">
@@ -205,48 +196,6 @@ html, body {
 </div>
 
 <script>
-// ── Particles ─────────────────────────────────────────────────────
-const canvas = document.getElementById('bg');
-const ctx    = canvas.getContext('2d');
-function resizeBg() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-resizeBg();
-window.addEventListener('resize', resizeBg);
-
-function mkP() {
-  const a = Math.random() * Math.PI * 2;
-  return {
-    x: Math.random(), y: Math.random(),
-    vx: Math.cos(a) * (Math.random() * 0.06 + 0.02),
-    vy: Math.sin(a) * (Math.random() * 0.06 + 0.02),
-    r: Math.random() * 1.2 + 0.3,
-    aMax: Math.random() * 0.18 + 0.04,
-    phase: Math.random() * Math.PI * 2,
-    bT: Math.random() * 8 + 6,
-    dT: Math.random() * 20 + 15,
-    dA: Math.random() * Math.PI * 2,
-  };
-}
-const pts = Array.from({length:55}, mkP);
-pts.forEach((p,i) => p.phase = (i/55)*Math.PI*2);
-
-function animP(ts) {
-  const t = ts/1000;
-  const w = canvas.width, h = canvas.height;
-  ctx.clearRect(0,0,w,h);
-  pts.forEach(p => {
-    const da = (t/p.dT)*Math.PI*2 + p.dA;
-    p.vx += (Math.cos(da)*(p.r*0.1+0.02) - p.vx)*0.008;
-    p.vy += (Math.sin(da)*(p.r*0.1+0.02) - p.vy)*0.008;
-    p.x += p.vx/w; p.y += p.vy/h;
-    if(p.x<0)p.x=1; if(p.x>1)p.x=0; if(p.y<0)p.y=1; if(p.y>1)p.y=0;
-    ctx.globalAlpha = p.aMax*(0.5+0.5*Math.sin(t/p.bT*Math.PI*2+p.phase));
-    ctx.fillStyle='#fff';
-    ctx.beginPath(); ctx.arc(p.x*w, p.y*h, p.r, 0, Math.PI*2); ctx.fill();
-  });
-  requestAnimationFrame(animP);
-}
-requestAnimationFrame(animP);
-
 // ── Clock & date ──────────────────────────────────────────────────
 const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
                 'JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
@@ -450,30 +399,6 @@ function tempGrad(d){ const s=Math.max(-25,Math.min(25,d*3.5)); return {left:s,r
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 function hslStr(h,s,l){ return `hsl(${h.toFixed(1)},${clamp(s,5,70).toFixed(1)}%,${clamp(l,8,95).toFixed(1)}%)`; }
 
-// ── 動的Favicon ───────────────────────────────────────────────────
-const favCanvas = document.createElement('canvas');
-favCanvas.width = favCanvas.height = 64;
-const favCtx = favCanvas.getContext('2d');
-let favLastUpdate = 0;
-
-function updateFavicon(hL, hR, s, l, gd) {
-  const now = Date.now();
-  if (now - favLastUpdate < 1000) return; // 1秒に1回だけ更新
-  favLastUpdate = now;
-  const sz = favCanvas.width;
-  if (gd < 0.5) {
-    favCtx.fillStyle = hslStr(hL, s, l);
-    favCtx.fillRect(0, 0, sz, sz);
-  } else {
-    const gr = favCtx.createLinearGradient(0, 0, sz, 0);
-    gr.addColorStop(0, hslStr(hL, s, l));
-    gr.addColorStop(1, hslStr(hR, s, l));
-    favCtx.fillStyle = gr;
-    favCtx.fillRect(0, 0, sz, sz);
-  }
-  document.getElementById('favicon').href = favCanvas.toDataURL('image/png');
-}
-
 // 初期状態: 黒（bgReadyがtrueになるまで黒のまま）
 let cur = { hBase: 0, s: 0, l: 0, wb: 0, gradL: 0, gradR: 0 };
 let bgReady = false;
@@ -517,11 +442,9 @@ function bgTick() {
   document.body.style.background = gd < 0.5
     ? hslStr(hL, cur.s, cur.l)
     : `linear-gradient(to right,${hslStr(hL,cur.s,cur.l)},${hslStr(hR,cur.s,cur.l)})`;
-  updateFavicon(hL, hR, cur.s, cur.l, gd);
-
-  requestAnimationFrame(bgTick);
 }
-requestAnimationFrame(bgTick);
+bgTick();
+setInterval(bgTick, 1000);
 </script>
 </body>
 </html>
