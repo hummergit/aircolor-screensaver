@@ -423,8 +423,8 @@ input[type=range] { flex: 1; accent-color: var(--acc); cursor: pointer; }
       <div class="sec-ttl">気温影響</div>
       <div class="cr">
         <label class="cr-lbl">WB係数</label>
-        <input type="range" id="sl-wb" min="-3" max="0" step="0.05" value="-0.5">
-        <span class="cr-val" id="v-wb">-0.50</span>
+        <input type="range" id="sl-wb" min="-3" max="0" step="0.05" value="-0.7">
+        <span class="cr-val" id="v-wb">-0.70</span>
       </div>
       <div class="cr">
         <label class="cr-lbl">Grad係数</label>
@@ -518,18 +518,18 @@ input[type=range] { flex: 1; accent-color: var(--acc); cursor: pointer; }
 // ── Defaults ──────────────────────────────────────────────────────
 const DFLT = {
   wxColors: {
-    sunny:   {h: 38, s: 87, l: 72},
-    pcloudy: {h: 44, s: 36, l: 75},
+    sunny:   {h: 33, s: 73, l: 90},
+    pcloudy: {h: 41, s: 62, l: 87},
     cloudy:  {h:140, s: 12, l: 78},
     fog:     {h:150, s:  8, l: 81},
-    rain:    {h:200, s: 60, l: 78},
+    rain:    {h:200, s: 52, l: 87},
     snow:    {h:210, s: 35, l: 88},
-    shower:  {h:197, s: 34, l: 79},
-    storm:   {h:270, s: 20, l: 78},
+    shower:  {h:197, s: 32, l: 87},
+    storm:   {h:270, s: 13, l: 82},
   },
   lKeys: [[0,.65],[3,.73],[6,.81],[8,.88],[10,.95],[12,1.00],[15,.91],[17,.86],[19,.80],[21,.74],[24,.65]],
   sKeys: [[0,.55],[3,.67],[6,.78],[8,.87],[10,.96],[12,1.05],[15,.94],[17,.85],[19,.75],[21,.64],[24,.55]],
-  wbCoef:  -0.5,
+  wbCoef:  -0.7,
   gradCoef: 3.5,
 };
 const WX_KEYS   = ['sunny','pcloudy','cloudy','fog','rain','snow','shower','storm'];
