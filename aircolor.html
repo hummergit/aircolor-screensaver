@@ -359,14 +359,14 @@ setInterval(fetchWeather, 10 * 60 * 1000);
 
 // ── 背景色システム ────────────────────────────────────────────────
 const WX_COLORS = {
-  sunny:   {h: 38,  s: 87, l: 72},
-  pcloudy: {h: 44,  s: 36, l: 75},
+  sunny:   {h: 33,  s: 73, l: 90},
+  pcloudy: {h: 41,  s: 62, l: 87},
   cloudy:  {h:140,  s: 12, l: 78},
   fog:     {h:150,  s:  8, l: 81},
-  rain:    {h:200,  s: 60, l: 78},
+  rain:    {h:200,  s: 52, l: 87},
   snow:    {h:210,  s: 35, l: 88},
-  shower:  {h:197,  s: 34, l: 79},
-  storm:   {h:270,  s: 20, l: 78},
+  shower:  {h:197,  s: 32, l: 87},
+  storm:   {h:270,  s: 13, l: 82},
 };
 function wxToBase(code) {
   if (code == null) return WX_COLORS.sunny;
@@ -394,7 +394,7 @@ function interpKeys(keys, hf) {
 }
 function timeLRatio(hf) { return interpKeys(L_KEYS, hf); }
 function timeSRatio(hf) { return interpKeys(S_KEYS, hf); }
-function tempWB(t)  { if(t==null)return 0; return Math.max(-12,Math.min(12,(t-15)*-0.5)); }
+function tempWB(t)  { if(t==null)return 0; return Math.max(-12,Math.min(12,(t-15)*-0.7)); }
 function tempGrad(d){ const s=Math.max(-25,Math.min(25,d*3.5)); return {left:s,right:-s}; }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 function hslStr(h,s,l){ return `hsl(${h.toFixed(1)},${clamp(s,5,70).toFixed(1)}%,${clamp(l,8,95).toFixed(1)}%)`; }
