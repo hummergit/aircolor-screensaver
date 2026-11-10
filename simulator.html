@@ -561,7 +561,7 @@ function interp(keys, hf) {
   return v0 + (v1-v0) * ((hf-h0)/(h1-h0));
 }
 function clamp(v,a,b) { return Math.max(a, Math.min(b, v)); }
-function hsl(h,s,l)   { return `hsl(${h.toFixed(1)},${clamp(s,5,70).toFixed(1)}%,${clamp(l,8,95).toFixed(1)}%)`; }
+function hsl(h,s,l)   { return `hsl(${h.toFixed(1)},${clamp(s,5,75).toFixed(1)}%,${clamp(l,8,95).toFixed(1)}%)`; }
 
 // Compute for current state
 function compute(hf) {
@@ -596,7 +596,7 @@ function renderPreview() {
 function renderInfo() {
   const {hL, hR, s, l, wb, lr, sr, lRaw, sRaw} = compute(st.time);
   const base = st.wxColors[st.wx];
-  const lCl = clamp(lRaw,8,95), sCl = clamp(sRaw,5,70);
+  const lCl = clamp(lRaw,8,95), sCl = clamp(sRaw,5,75);
   const lW = lCl !== lRaw ? ` <span style="color:#f88">→clamped ${lCl.toFixed(1)}</span>` : '';
   const sW = sCl !== sRaw ? ` <span style="color:#f88">→clamped ${sCl.toFixed(1)}</span>` : '';
   document.getElementById('info').innerHTML =
